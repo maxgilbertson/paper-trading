@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paper Trading Experiment</title>
+<meta name="description" content="An AI trading a simulated £1,000,000 paper account at Interactive Brokers: holdings, performance, risk, signals, orders and a plain-English daily log.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css?v=3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M6 22l7-7 5 4 8-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top"><div class="wrap top-inner">
+  <div class="top-title">
+    <h1>Paper trading experiment</h1>
+    <p class="sub">Claude (an AI) trades a simulated £1,000,000 account. Not advice.</p>
+  </div>
+  <div class="top-meta"><p class="meta" id="updated"></p><a href="#about" class="jump">How it works</a></div>
+</div></header>
+
+<section id="account" class="wrap" aria-label="Account summary" tabindex="-1">
+  <div class="card acct">
+    <div class="strip" id="strip"></div>
+    <p id="strip-help" class="help" aria-live="polite" hidden></p>
+    <p id="short-history" class="short-history" hidden></p>
+    <div class="risk" id="risk-line">
+      <p class="risk-text"><svg class="ic risk-ic" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/></svg><span><strong>Expect big swings:</strong> falls of 25–35% are realistic, and about one year in three may trail cash. Past performance is no guide.</span></p>
+      <details class="info risk-more"><summary><svg class="ic" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25"/><path d="M12 11v5.5"/><circle class="fillc" cx="12" cy="7.6" r="1.1"/></svg><span>More on risk</span></summary>
+        <div class="info-body">
+          <p id="max-fall-line">Biggest fall so far: <span id="max-fall">none yet</span>.</p>
+          <p>Falls of 25–35% are realistic at some point, and roughly one year in three may do worse than cash. Losing stretches can last several years. Paper trading also flatters results a little, because simulated orders don't move prices. Past performance is not a guide to the future.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div id="status" class="wrap status" role="status"></div>
+
+<nav id="tabs" class="tabs" aria-label="Sections">
+  <div class="wrap tabs-inner">
+    <div class="tablist" role="tablist" aria-label="Sections">
+      <a href="#portfolio" data-tab="portfolio" role="tab" aria-controls="p-portfolio" aria-selected="true" aria-current="page"><span class="tico" aria-hidden="true"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" focusable="false"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M15 3.6a9 9 0 0 1 5.4 5.4"/></svg></span><span class="tlabel">Portfolio</span></a>
+      <a href="#performance" data-tab="performance" role="tab" aria-controls="p-performance" aria-selected="false"><span class="tico" aria-hidden="true"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" focusable="false"><path d="M3 17l5.5-5.5 4 4L21 7"/></svg></span><span class="tlabel">Performance</span></a>
+      <a href="#risk" data-tab="risk" role="tab" aria-controls="p-risk" aria-selected="false"><span class="tico" aria-hidden="true"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" focusable="false"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/></svg></span><span class="tlabel">Risk</span></a>
+      <a href="#signals" data-tab="signals" role="tab" aria-controls="p-signals" aria-selected="false" class="t-more"><span class="tlabel">Signals</span></a>
+      <a href="#orders" data-tab="orders" role="tab" aria-controls="p-orders" aria-selected="false"><span class="tico" aria-hidden="true"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" focusable="false"><path d="M4 8h15M15.5 4.5L19 8l-3.5 3.5M20 16H5M8.5 12.5L5 16l3.5 3.5"/></svg></span><span class="tlabel">Orders</span></a>
+      <a href="#notes" data-tab="notes" role="tab" aria-controls="p-notes" aria-selected="false" class="t-more"><span class="tlabel">Notes</span></a>
+      <a href="#about" data-tab="about" role="tab" aria-controls="p-about" aria-selected="false" class="t-more"><span class="tlabel">About</span></a>
+    </div>
+    <button type="button" id="more-btn" class="more" aria-expanded="false" aria-controls="more-menu"><span class="tico" aria-hidden="true"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" focusable="false"><circle class="fillc" cx="5" cy="12" r="1.9"/><circle class="fillc" cx="12" cy="12" r="1.9"/><circle class="fillc" cx="19" cy="12" r="1.9"/></svg></span><span class="tlabel">More</span></button>
+    <div id="more-menu" hidden><a href="#signals">Signals</a><a href="#notes">Notes</a><a href="#about">About (how it works)</a></div>
+  </div>
+</nav>
+
+<main id="panels" class="wrap">
+  <section id="p-portfolio" data-tab="portfolio" role="tabpanel" aria-labelledby="h-portfolio">
+    <div class="ph"><h2 id="h-portfolio" tabindex="-1">Holdings</h2><p id="holdings-asof" class="ph-sub"></p></div>
+    <div class="card overview" id="overview"><div id="glance"></div><div id="alloc"></div></div>
+    <div id="hold-card" class="card">
+      <div id="hold-controls"></div>
+      <div class="tbl-scroll" id="holdings-scroll"><table id="holdings" class="tbl hold"></table></div>
+      <ul id="holdings-list" class="hl"></ul>
+      <div id="cols-help"></div>
+    </div>
+  </section>
+
+  <section id="p-performance" data-tab="performance" role="tabpanel" aria-labelledby="h-performance" hidden>
+    <div class="ph"><h2 id="h-performance" tabindex="-1">Performance</h2><p id="perf-note" class="ph-sub" hidden></p></div>
+    <div id="ranges" class="ranges"></div>
+    <div class="card" id="growth-card">
+      <div class="card-head"><h3>Growth of £1,000,000, three ways</h3></div>
+      <div id="growth-readout" class="readout" aria-live="polite"></div>
+      <div id="growth-chart" class="chart-box"></div>
+      <div id="growth-more"></div>
+    </div>
+    <div class="card" id="dd-card">
+      <div class="card-head"><h3>Fall from the highest value so far</h3></div>
+      <div id="dd-readout" class="readout" aria-live="polite"></div>
+      <div id="dd-chart" class="chart-box"></div>
+      <div id="dd-more"></div>
+    </div>
+    <div class="card" id="stats-card"></div>
+    <div class="card" id="monthly-card"></div>
+    <div class="card" id="pnl-card"></div>
+  </section>
+
+  <section id="p-risk" data-tab="risk" role="tabpanel" aria-labelledby="h-risk" hidden>
+    <div class="ph"><h2 id="h-risk" tabindex="-1">Risk</h2><p class="ph-sub">Based on the past year of prices for today's holdings.</p></div>
+    <div class="card" id="risk-tiles"></div>
+    <div class="card" id="risk-spread"></div>
+    <div class="card" id="risk-donuts"></div>
+    <div class="card" id="contrib-card"></div>
+    <div class="card" id="risk-class-card"></div>
+  </section>
+
+  <section id="p-signals" data-tab="signals" role="tabpanel" aria-labelledby="h-signals" hidden>
+    <div class="ph"><h2 id="h-signals" tabindex="-1">Signals</h2><p id="signals-asof" class="ph-sub"></p></div>
+    <div class="card" id="sig-card">
+      <div id="sig-controls"></div>
+      <p id="nobet" class="fact-line" hidden></p>
+      <div class="tbl-scroll"><table id="signals-table" class="tbl sig"></table></div>
+      <div id="sig-help"></div>
+    </div>
+  </section>
+
+  <section id="p-orders" data-tab="orders" role="tabpanel" aria-labelledby="h-orders" hidden>
+    <div class="ph"><h2 id="h-orders" tabindex="-1">Orders</h2><p class="ph-sub">One decision a day at about 16:05 UK time. Newest first.</p></div>
+    <div class="card" id="orders-card">
+      <div id="order-days"></div>
+      <div id="orders-log"></div>
+      <p id="orders-cap" class="cap-note"></p>
+      <div id="orders-help"></div>
+    </div>
+  </section>
+
+  <section id="p-notes" data-tab="notes" role="tabpanel" aria-labelledby="h-notes" hidden>
+    <div class="ph"><h2 id="h-notes" tabindex="-1">Daily notes</h2><p class="ph-sub">Written after each trading day, newest first.</p></div>
+    <div class="card"><div id="log-entries"></div></div>
+  </section>
+
+  <section id="p-about" data-tab="about" role="tabpanel" aria-labelledby="h-about" class="prose" hidden>
+    <div class="ph"><h2 id="h-about" tabindex="-1">How it works</h2><p class="ph-sub">One trading decision a day, made by a program.</p></div>
+    <div class="card acc">
+      <details class="acc-d" id="how-expect"><summary><h3>What to expect</h3></summary>
+        <div class="acc-b">
+          <p>Together the account aims for about <span id="risk-total">19%</span> a year of ups and downs (assuming the two parts move largely independently). That means bigger expected gains than either part alone, and falls of 25–35% are realistic at some point. Roughly one year in three may do worse than cash, and losing stretches can last several years. Paper trading also flatters results a little, because simulated orders don't move prices. Past performance is not a guide to the future.</p>
+        </div>
+      </details>
+      <details class="acc-d" id="how-parts"><summary><h3>The two parts</h3></summary>
+        <div class="acc-b">
+          <p><strong>World shares fund.</strong> Over long periods, shares worldwide have usually done better than cash, but with deep falls along the way (more than 50% in 2008–09). Up to 85% of the account goes into one global index fund, sized so this part swings by about 10% a year, and bought in steps of up to £250,000 a day.</p>
+          <p><strong>Futures across 27 markets.</strong> Share indices, government bonds, currencies, metals, energy and farm goods. A future is a contract to buy or sell later at a price fixed now. It needs only a deposit, so a small amount of money controls a much larger face value. For each market the system follows the price trend (markets that have been rising tend to keep rising for a while, and the same for falling) and leans towards markets that pay you to hold them. It can bet on prices falling as well as rising, which has tended to help during long, drawn-out market falls; it does not protect the part held in the world fund. This part aims for about <span id="risk-futures">16%</span> a year of ups and downs.</p>
+        </div>
+      </details>
+      <details class="acc-d" id="how-decisions"><summary><h3>How decisions are made</h3></summary>
+        <div class="acc-b">
+          <p>From 8 October, one decision a day, using the previous day's closing prices, traded at about 16:05 UK time. Trading more often would mostly add costs: the published evidence says the profits in these strategies come from slow, steady positioning. Day 1 had two set-up runs in the morning (the first used the price trend only, the second added the pays-to-hold part), so some positions were reversed within minutes.</p>
+          <p>New trading strategies are tested on years of history against pass marks fixed in advance; two stock-picking strategies failed that test on day 1 and were dropped. The world fund and the higher risk level were judgement calls based on long-run published evidence, not tested strategies.</p>
+        </div>
+      </details>
+      <details class="acc-d" id="how-safety"><summary><h3>Safety</h3></summary>
+        <div class="acc-b">
+          <p>The program can only reach the paper account. A market whose data is missing or suspect is left untouched (only contracts about to expire are still moved to the next month), and if more than three are affected nothing is rebalanced that day. Every position has a size cap, and a stop switch blocks all new orders.</p>
+        </div>
+      </details>
+      <details class="acc-d" id="how-words"><summary><h3>What the words mean</h3></summary>
+        <div class="acc-b">
+          <dl class="glossary">
+            <dt>Account value (NAV)</dt><dd>What the whole account is worth: cash plus everything held.</dd>
+            <dt>Long and Short</dt><dd>Long is a bet on the price rising; Short is a bet on it falling. The account gains if the price moves the way of the bet and loses if it moves the other way.</dd>
+            <dt>Face value (notional)</dt><dd>The full value of the contracts in pounds. Futures need only a deposit, so face values can add up to more than the account.</dd>
+            <dt>% of account</dt><dd>Face value divided by the account value.</dd>
+            <dt>Open profit/loss (unrealised)</dt><dd>Gains or losses on holdings that are still open, so not yet banked.</dd>
+            <dt>Day change</dt><dd>How much a holding, or the whole account, has moved since the last closing value.</dd>
+            <dt>Closing value</dt><dd>The account's value recorded at 21:35 UK time each weekday.</dd>
+            <dt>Catch-up reading</dt><dd>A value recorded the next morning when the 21:35 closing value was missed. It stands in for the missed close.</dd>
+            <dt>Typical yearly swing</dt><dd>Roughly how much a holding might gain or lose in an ordinary year. Bad years can be much bigger, and it is not the most that could be lost.</dd>
+            <dt>Share of the risk: on its own and after offsets</dt><dd>On its own counts each holding as if nothing else were held. After offsets allows for holdings that tend to move together or against each other over the past year, so a holding can count for more, less, or even below zero.</dd>
+            <dt>Signal (forecast, scaled −20 to +20)</dt><dd>How strongly the system leans towards rising (+) or falling (−) prices. The size of a holding follows its signal.</dd>
+            <dt>Price trend (EWMAC)</dt><dd>Whether the price has been rising or falling over recent weeks and months.</dd>
+            <dt>Pays to hold (carry)</dt><dd>Whether holding the contract earns or costs money while prices stay still.</dd>
+            <dt>Average price (incl. costs)</dt><dd>The average price of a holding, including commission, in the market's own price units.</dd>
+            <dt>Contract month</dt><dd>When a futures contract ends. Holdings are moved to the next month before then.</dd>
+            <dt>Set-up run</dt><dd>The first-day runs that built the starting positions.</dd>
+            <dt>Late daily run</dt><dd>A daily run that started after 17:00 UK time, for example because the computer was off at 16:05.</dd>
+            <dt>Held back</dt><dd>An order that was not sent because its market had closed. It goes at the next daily run.</dd>
+            <dt>Typical yearly ups and downs (volatility)</dt><dd>How much the daily value moves, scaled up to a year.</dd>
+            <dt>Fall from a high (drawdown)</dt><dd>How far the value is below the highest value it had reached before.</dd>
+            <dt>Moves with the world fund (correlation)</dt><dd>From −1 to +1: how closely daily moves follow the world fund's daily moves.</dd>
+            <dt>Return per unit of ups and downs (Sharpe ratio)</dt><dd>The yearly return above cash, divided by the yearly ups and downs.</dd>
+            <dt>Cash rate (SONIA)</dt><dd>The Bank of England's overnight interest rate, used for the cash comparison.</dd>
+            <dt>Diversification multipliers (IDM, FDM)</dt><dd>Factors that scale holdings up because markets and signal parts do not all move together.</dd>
+          </dl>
+        </div>
+      </details>
+      <details class="acc-d" id="how-figures"><summary><h3>How the figures are worked out</h3></summary>
+        <div class="acc-b">
+          <dl class="glossary">
+            <dt>Account value</dt><dd>Cash plus the value of everything held, in pounds, as reported by the broker at each reading.</dd>
+            <dt>Day change</dt><dd>The account value now minus the last closing value before today's date.</dd>
+            <dt>Open profit/loss</dt><dd>The sum of each holding's gain or loss since it was opened, in pounds.</dd>
+            <dt>Since the start</dt><dd>The account value minus the £1,000,000 it started with.</dd>
+            <dt>World fund instead and Cash instead</dt><dd>£1,000,000 grown in line with the world fund's price, or with the Bank of England overnight rate, from the same day.</dd>
+            <dt>Face value and % of account</dt><dd>Contracts held times contract size times price, in pounds; divided by the account value for the %.</dd>
+            <dt>Average and last price</dt><dd>In each market's own quoted units (for example US cents for corn), so they match the price chart and the orders.</dd>
+            <dt>Day change of a holding</dt><dd>Its value at the latest snapshot, minus its value at the previous snapshot, minus the cost of any trades in between and their commission, in pounds.</dd>
+            <dt>Everything else</dt><dd>The account's change minus the holdings' total: bets already closed, fees, interest and currency effects.</dd>
+            <dt>Share of the risk on its own</dt><dd>A holding's typical yearly swing divided by the sum of all holdings' swings.</dd>
+            <dt>Share of the risk after offsets</dt><dd>Each holding's part of the whole account's swing, from the past year's daily profit and loss of today's holdings; the parts add up to 100%.</dd>
+            <dt>Whole-account yearly swing</dt><dd>The spread of the past year's daily profit and loss of today's holdings, taken together and scaled to a year.</dd>
+            <dt>A bad day and the worst day</dt><dd>The day that 1 day in 20 was worse than, and the single worst day, in the past year's daily profit and loss of today's holdings.</dd>
+            <dt>Growth chart</dt><dd>Each line is its value divided by its value at the start of the selected range, minus 1.</dd>
+            <dt>Fall from the highest value</dt><dd>The value divided by the highest value so far in the range, minus 1.</dd>
+            <dt>Yearly rate</dt><dd>(End value ÷ start value) to the power of (252 ÷ trading days), minus 1.</dd>
+            <dt>Ups and downs</dt><dd>The spread (standard deviation) of daily returns times the square root of 252.</dd>
+            <dt>Return per unit of ups and downs</dt><dd>The average daily return above cash times 252, divided by the spread of those daily returns times the square root of 252.</dd>
+            <dt>Share of days up, biggest daily rise and fall</dt><dd>Counted over the daily returns in the selected range. An intraday reading taken today is left out until its day closes.</dd>
+            <dt>Longest spell below a previous high</dt><dd>The longest run of trading days in a row on which the value was below its highest value so far.</dd>
+            <dt>Monthly returns</dt><dd>Each month's last value divided by the previous month's last value, minus 1; the first month starts from £1,000,000.</dd>
+            <dt>Profit/loss by asset class</dt><dd>Still open is the holdings' open profit/loss; the total comes from every recorded fill since the start at today's exchange rates, so closed amounts are approximate.</dd>
+            <dt>Signal</dt><dd>The price trend part and the pays-to-hold part combined, then capped at −20 and +20.</dd>
+          </dl>
+        </div>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Simulated trading with paper money at Interactive Brokers. Nothing here is investment advice.</p>
+  <p>Also by Max: <a href="https://maxgilbertson.github.io/sector-compass/">Sector Compass</a> · <a href="https://maxgilbertson.github.io/bond-compass/">Bond Compass</a></p>
+  <a class="jump" id="to-top" href="#account">Back to top ↑</a>
+</footer>
+<noscript><p class="noscript">This page needs JavaScript to show the figures.</p></noscript>
+<!-- bump ?v= whenever app.js or style.css change, so browsers never mix an old file with a new page -->
+<script src="app.js?v=3"></script>
+</body>
+</html>
